@@ -39,7 +39,7 @@ class MailhogClientTest extends TestCase
             new Client(),
             new Psr17Factory(),
             new Psr17Factory(),
-            $_ENV['mailhog_api_uri']
+            $_ENV['mailpit_api_url'] ?? 'http://localhost:8025'
         );
         $this->client->purgeMessages();
     }
@@ -533,7 +533,7 @@ class MailhogClientTest extends TestCase
 
         $message = iterator_to_array($this->client->findAllMessages())[0];
 
-        $info = parse_url($_ENV['mailhog_smtp_dsn']);
+        $info = parse_url($_ENV['mailhog_smtp_dsn'] ?? 'smtp://localhost:1025');
 
         $this->client->releaseMessage(
             $message->messageId,

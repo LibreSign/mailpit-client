@@ -37,21 +37,19 @@ final class MailhogConfig
             return;
         }
 
-        if (!isset($_ENV['mailpit_smtp_dsn'])) {
-            throw new RuntimeException('Environment variable "mailpit_smtp_dsn" must be defined');
-        }
+        $dsn = $_ENV['mailpit_smtp_dsn'] ?? 'smtp://localhost:1025';
 
-        $info = parse_url($_ENV['mailpit_smtp_dsn']);
+        $info = parse_url($dsn);
 
         if (!is_array($info)) {
-            throw new RuntimeException(sprintf('Unable to parse DSN "%s"', $_ENV['mailpit_smtp_dsn']));
+            throw new RuntimeException(sprintf('Unable to parse DSN "%s"', $dsn));
         }
 
         if (!isset($info['host'])) {
             throw new RuntimeException(
                 sprintf(
                     'Unable to parse host from Mailhog DSN "%s"',
-                    $_ENV['mailpit_smtp_dsn']
+                    $dsn
                 )
             );
         }
@@ -60,7 +58,7 @@ final class MailhogConfig
             throw new RuntimeException(
                 sprintf(
                     'Unable to parse port from Mailhog DSN "%s"',
-                    $_ENV['mailpit_smtp_dsn']
+                    $dsn
                 )
             );
         }

@@ -43,7 +43,7 @@ trait MessageTrait
     private function getMailer(): MailerInterface
     {
         if (null === $this->mailer) {
-            $this->mailer = new Mailer(Transport::fromDsn($_ENV['mailpit_smtp_dsn']));
+            $this->mailer = new Mailer(Transport::fromDsn($_ENV['mailpit_smtp_dsn'] ?? 'smtp://localhost:1025'));
         }
 
         return $this->mailer;
