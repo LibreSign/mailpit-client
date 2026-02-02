@@ -8,8 +8,8 @@
          colors="true"
          cacheDirectory=".phpunit.cache">
   <php>
-    <env name="mailhog_smtp_dsn" value="smtp://localhost:1025"/>
-    <env name="mailhog_api_uri" value="http://localhost:8025"/>
+    <env name="mailpit_smtp_dsn" value="smtp://localhost:1025"/>
+    <env name="mailpit_api_uri" value="http://localhost:8025"/>
   </php>
   <testsuites>
     <testsuite name="unit">
