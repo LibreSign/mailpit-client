@@ -8,10 +8,6 @@
          failOnDeprecation="true"
          colors="true"
          cacheDirectory=".phpunit.cache">
-  <php>
-    <env name="mailpit_smtp_dsn" value="smtp://localhost:1025"/>
-    <env name="mailpit_api_uri" value="http://localhost:8025"/>
-  </php>
   <testsuites>
     <testsuite name="unit">
       <directory>tests/unit</directory>
