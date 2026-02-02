@@ -51,5 +51,8 @@
             "php-http/discovery": true,
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "scripts": {
+        "lint": "find . -name \\*.php -not -path './vendor/*' -not -path './build/*' -print0 | xargs -0 -n1 php -l"
     }
 }
