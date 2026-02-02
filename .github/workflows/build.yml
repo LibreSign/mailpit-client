@@ -33,4 +33,7 @@ jobs:
         run: composer update
 
       - name: Run tests
-        run: make test
+        env:
+          mailpit_smtp_dsn: smtp://mailpit:1025
+          mailpit_api_url: http://mailpit:8025
+        run: composer run test:unit
