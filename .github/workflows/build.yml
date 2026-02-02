@@ -11,12 +11,12 @@ jobs:
       mailpit:
         image: axllent/mailpit
         env:
-          MH_SMTP_BIND_ADDR: 0.0.0.0:2025
-          MH_API_BIND_ADDR: 0.0.0.0:9025
-          MH_UI_BIND_ADDR: 0.0.0.0:9025
+          MH_SMTP_BIND_ADDR: 0.0.0.0:1025
+          MH_API_BIND_ADDR: 0.0.0.0:8025
+          MH_UI_BIND_ADDR: 0.0.0.0:8025
         ports:
-          - 2025:2025
-          - 9025:9025
+          - 1025:1025
+          - 8025:8025
     runs-on: ubuntu-22.04
     name: Test
     strategy:
