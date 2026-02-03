@@ -54,8 +54,6 @@ class MessageFactory
             if (isset($contactData['Address'])) {
                 return new Contact($contactData['Address'], $contactData['Name'] ?? null);
             }
-
-            
         }
 
         if ($headerFallback !== '') {
@@ -68,8 +66,10 @@ class MessageFactory
     /**
      * @param mixed[]|null $contactsData
      */
-    private static function convertContactCollection(array | null $contactsData, string $headerFallback): ContactCollection
-    {
+    private static function convertContactCollection(
+        ?array $contactsData,
+        string $headerFallback,
+    ): ContactCollection {
         if ($headerFallback !== '') {
             return ContactCollection::fromString($headerFallback);
         }
@@ -84,8 +84,6 @@ class MessageFactory
                 $contacts[] = new Contact($contactData['Address'], $contactData['Name'] ?? null);
                 continue;
             }
-
-            
         }
 
         return new ContactCollection($contacts);

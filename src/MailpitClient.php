@@ -183,7 +183,6 @@ class MailpitClient
         assert($request instanceof RequestInterface);
 
         $this->httpClient->sendRequest($request);
-
     }
 
     public function getMessageById(string $messageId): Message

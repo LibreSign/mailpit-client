@@ -30,8 +30,7 @@ class MimePart
         $headers = Headers::fromMimePart($mimePart);
 
         $filename = null;
-        if (
-            $headers->has('Content-Disposition') &&
+        if ($headers->has('Content-Disposition') &&
             stripos($headers->get('Content-Disposition'), 'attachment') === 0
         ) {
             $matches = [];

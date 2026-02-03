@@ -40,7 +40,6 @@
         "nyholm/psr7": "^1.2",
         "pdepend/pdepend": "^2.5",
         "php-http/curl-client": "^2.0",
-        "php-parallel-lint/php-parallel-lint": "^1.2",
         "phpmd/phpmd": "^2.9.1",
         "phpstan/phpstan": "^0.12.64",
         "phpunit/phpunit": "10.5.x-dev",
@@ -58,6 +57,8 @@
     },
     "scripts": {
         "lint": "find . -name \\*.php -not -path './vendor/*' -print0 | xargs -0 -n1 php -l",
+        "cs:check": "phpcs --standard=PSR2 src/",
+        "cs:fix": "phpcbf --standard=PSR2 src/",
         "phpmd": "vendor/bin/phpmd src text phpmd.xml"
     }
 }
