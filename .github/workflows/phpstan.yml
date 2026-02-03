@@ -37,8 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer install --no-scripts
-          composer bin phpstan install
+          composer install
 
       - name: Run PHPStan
         run: composer run phpstan

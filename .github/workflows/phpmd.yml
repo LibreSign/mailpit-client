@@ -37,8 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer install --no-scripts
-          composer bin phpmd install
+          composer install
 
       - name: Run PHPMD
         run: composer run phpmd

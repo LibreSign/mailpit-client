@@ -44,8 +44,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer i
-          composer bin phpunit install
+          composer install
 
       - name: Run tests
         env:
