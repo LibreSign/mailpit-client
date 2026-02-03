@@ -3,10 +3,6 @@ declare(strict_types=1);
 
 namespace LibreSign\Mailpit\Message\Mime;
 
-use function array_merge;
-use function count;
-use function stripos;
-
 class MimePartCollection
 {
     /**
@@ -27,18 +23,23 @@ class MimePartCollection
     /**
      * @param mixed[] $mimeParts
      *
-     * @return mixed[]
+     * @return array<int, MimePart>
      */
     protected static function flattenParts(array $mimeParts): array
     {
         $flattenedParts = [];
         foreach ($mimeParts as $mimePart) {
-            if (!isset($mimePart['MIME']['Parts'])) {
+            if (!is_array($mimePart)) {
+                continue;
+            }
+
+            $mimeData = $mimePart['MIME'] ?? null;
+            if (!is_array($mimeData) || !isset($mimeData['Parts']) || !is_array($mimeData['Parts'])) {
                 $flattenedParts[] = MimePart::fromMailpitResponse($mimePart);
                 continue;
             }
 
-            $flattenedParts = array_merge($flattenedParts, self::flattenParts($mimePart['MIME']['Parts']));
+            $flattenedParts = array_merge($flattenedParts, self::flattenParts($mimeData['Parts']));
         }
 
         return $flattenedParts;

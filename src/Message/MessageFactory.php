@@ -3,37 +3,48 @@ declare(strict_types=1);
 
 namespace LibreSign\Mailpit\Message;
 
-use function quoted_printable_decode;
-
 class MessageFactory
 {
     /**
-     * @param mixed[] $mailpitResponse
+     * @param array<string, mixed> $mailpitResponse
      */
     public static function fromMailpitResponse(array $mailpitResponse): Message
     {
         $headers = Headers::fromMailpitResponse($mailpitResponse);
 
-        $fromContact = self::convertContact($mailpitResponse['From'] ?? null, $headers->get('From', ''));
-        $toContacts = self::convertContactCollection($mailpitResponse['To'] ?? [], $headers->get('To', ''));
-        $ccContacts = self::convertContactCollection($mailpitResponse['Cc'] ?? [], $headers->get('Cc', ''));
-        $bccContacts = self::convertContactCollection($mailpitResponse['Bcc'] ?? [], $headers->get('Bcc', ''));
+        $fromContact = self::convertContact(
+            self::normalizeStringKeyedArray($mailpitResponse['From'] ?? null),
+            $headers->get('From', '')
+        );
 
-        $body = $mailpitResponse['HTML'] ?? '';
-        if ($body === '' || $body === null) {
-            $body = $mailpitResponse['Text'] ?? '';
+        $toContacts = self::convertContactCollection(
+            self::normalizeArrayOfStringKeyedArrays($mailpitResponse['To'] ?? null),
+            $headers->get('To', '')
+        );
+        $ccContacts = self::convertContactCollection(
+            self::normalizeArrayOfStringKeyedArrays($mailpitResponse['Cc'] ?? null),
+            $headers->get('Cc', '')
+        );
+        $bccContacts = self::convertContactCollection(
+            self::normalizeArrayOfStringKeyedArrays($mailpitResponse['Bcc'] ?? null),
+            $headers->get('Bcc', '')
+        );
+
+        $body = self::getString($mailpitResponse, 'HTML');
+        if ($body === '') {
+            $body = self::getString($mailpitResponse, 'Text');
         }
 
-        $body = static::decodeBody($headers, $body ?? '');
-        $body = preg_replace('/\r\n$/', '', $body);
+        $body = self::decodeBody($headers, $body);
+        $body = preg_replace('/\r\n$/', '', $body) ?? '';
 
         $attachments = self::buildAttachments(
-            $mailpitResponse['Attachments'] ?? [],
-            $mailpitResponse['AttachmentsData'] ?? []
+            self::normalizeArrayOfStringKeyedArrays($mailpitResponse['Attachments'] ?? null),
+            self::normalizeStringMap($mailpitResponse['AttachmentsData'] ?? null)
         );
 
         return new Message(
-            $mailpitResponse['ID'],
+            self::getString($mailpitResponse, 'ID'),
             $fromContact,
             $toContacts,
             $ccContacts,
@@ -51,8 +62,12 @@ class MessageFactory
     private static function convertContact(array | null $contactData, string $headerFallback): Contact
     {
         if (is_array($contactData)) {
-            if (isset($contactData['Address'])) {
-                return new Contact($contactData['Address'], $contactData['Name'] ?? null);
+            $address = $contactData['Address'] ?? null;
+            if (is_string($address) && $address !== '') {
+                $name = $contactData['Name'] ?? null;
+                $name = is_string($name) ? $name : null;
+
+                return new Contact($address, $name);
             }
         }
 
@@ -64,10 +79,10 @@ class MessageFactory
     }
 
     /**
-     * @param mixed[]|null $contactsData
+     * @param array<int, array<string, mixed>> $contactsData
      */
     private static function convertContactCollection(
-        ?array $contactsData,
+        array $contactsData,
         string $headerFallback,
     ): ContactCollection {
         if ($headerFallback !== '') {
@@ -75,15 +90,14 @@ class MessageFactory
         }
 
         $contacts = [];
-        foreach ($contactsData ?? [] as $contactData) {
-            if (!is_array($contactData)) {
+        foreach ($contactsData as $contactData) {
+            $address = $contactData['Address'] ?? null;
+            if (!is_string($address) || $address === '') {
                 continue;
             }
 
-            if (isset($contactData['Address'])) {
-                $contacts[] = new Contact($contactData['Address'], $contactData['Name'] ?? null);
-                continue;
-            }
+            $name = $contactData['Name'] ?? null;
+            $contacts[] = new Contact($address, is_string($name) ? $name : null);
         }
 
         return new ContactCollection($contacts);
@@ -99,18 +113,26 @@ class MessageFactory
         $result = [];
 
         foreach ($attachments as $attachment) {
-            if (!is_array($attachment)) {
+            $partId = $attachment['PartID'] ?? null;
+            if (!is_string($partId) && !is_int($partId)) {
                 continue;
             }
 
-            $partId = $attachment['PartID'] ?? null;
-            if (!is_string($partId)) {
-                continue;
+            $partId = (string) $partId;
+
+            $fileName = $attachment['FileName'] ?? '';
+            if (!is_string($fileName)) {
+                $fileName = '';
+            }
+
+            $contentType = $attachment['ContentType'] ?? 'application/octet-stream';
+            if (!is_string($contentType)) {
+                $contentType = 'application/octet-stream';
             }
 
             $result[] = new Mime\Attachment(
-                $attachment['FileName'] ?? '',
-                $attachment['ContentType'] ?? 'application/octet-stream',
+                $fileName,
+                $contentType,
                 $attachmentContents[$partId] ?? ''
             );
         }
@@ -125,5 +147,76 @@ class MessageFactory
         }
 
         return $body;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     */
+    private static function getString(array $data, string $key, string $default = ''): string
+    {
+        $value = $data[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string, mixed>
+     */
+    private static function normalizeStringKeyedArray(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $normalized[$key] = $item;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeArrayOfStringKeyedArrays(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $item) {
+            $normalizedItem = self::normalizeStringKeyedArray($item);
+            if ($normalizedItem !== []) {
+                $result[] = $normalizedItem;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string, string>
+     */
+    private static function normalizeStringMap(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $mapKey => $mapValue) {
+            if (is_string($mapValue)) {
+                $result[(string) $mapKey] = $mapValue;
+            }
+        }
+
+        return $result;
     }
 }

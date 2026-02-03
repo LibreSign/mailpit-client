@@ -5,12 +5,6 @@ namespace LibreSign\Mailpit\Message\Mime;
 
 use LibreSign\Mailpit\Message\Headers;
 
-use function base64_decode;
-use function explode;
-use function preg_match;
-use function quoted_printable_decode;
-use function stripos;
-
 class MimePart
 {
     private function __construct(
@@ -35,12 +29,17 @@ class MimePart
         ) {
             $matches = [];
             preg_match('~filename=(?P<filename>.*?)(;|$)~i', $headers->get('Content-Disposition'), $matches);
-            $filename = $matches['filename'];
+            $filename = is_string($matches['filename'] ?? null) ? $matches['filename'] : null;
         }
 
         $isAttachment = false;
         if ($headers->has('Content-Disposition')) {
             $isAttachment = stripos($headers->get('Content-Disposition'), 'attachment') === 0;
+        }
+
+        $body = $mimePart['Body'] ?? '';
+        if (!is_string($body)) {
+            $body = '';
         }
 
         return new self(
@@ -52,7 +51,7 @@ class MimePart
                 : null,
             $isAttachment,
             $filename,
-            $mimePart['Body']
+            $body
         );
     }
 

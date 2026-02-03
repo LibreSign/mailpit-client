@@ -41,7 +41,7 @@
         "pdepend/pdepend": "^2.5",
         "php-http/curl-client": "^2.0",
         "phpmd/phpmd": "^2.9.1",
-        "phpstan/phpstan": "^0.12.64",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "10.5.x-dev",
         "symfony/mailer": "^5.0",
         "vlucas/phpdotenv": "^5.6"
@@ -60,6 +60,7 @@
         "cs:check": "phpcs --standard=PSR2 src/",
         "cs:fix": "phpcbf --standard=PSR2 src/",
         "phpmd": "vendor/bin/phpmd src text phpmd.xml",
+        "phpstan": "vendor/bin/phpstan analyze src/",
         "test:unit": "vendor/bin/phpunit -c phpunit.xml.dist --colors=always",
         "test:coverage": "XDEBUG_MODE=coverage vendor/bin/phpunit"
     }

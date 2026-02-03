@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace LibreSign\Mailpit\Message;
 
-use function iconv_mime_decode;
-use function strtolower;
-
 class Headers
 {
     /**
@@ -20,7 +17,7 @@ class Headers
      */
     public static function fromMailpitResponse(array $mailpitResponse): self
     {
-        if (isset($mailpitResponse['Headers'])) {
+        if (isset($mailpitResponse['Headers']) && is_array($mailpitResponse['Headers'])) {
             return self::fromRawHeaders($mailpitResponse['Headers']);
         }
 
@@ -36,17 +33,23 @@ class Headers
      */
     public static function fromMimePart(array $mimePart): self
     {
-        return self::fromRawHeaders($mimePart['Headers']);
+        $headers = $mimePart['Headers'] ?? [];
+
+        return self::fromRawHeaders(is_array($headers) ? $headers : []);
     }
 
     /**
-     * @param array<string, array<string>> $rawHeaders
+     * @param array<mixed, mixed> $rawHeaders
      */
     private static function fromRawHeaders(array $rawHeaders): self
     {
         $headers = [];
         foreach ($rawHeaders as $name => $header) {
-            if (!isset($header[0])) {
+            if (!is_string($name)) {
+                continue;
+            }
+
+            if (!is_array($header) || !isset($header[0]) || !is_string($header[0])) {
                 continue;
             }
 

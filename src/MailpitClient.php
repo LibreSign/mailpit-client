@@ -6,24 +6,17 @@ namespace LibreSign\Mailpit;
 use Generator;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use LibreSign\Mailpit\Message\Message;
 use LibreSign\Mailpit\Message\MessageFactory;
 use LibreSign\Mailpit\Specification\Specification;
 use RuntimeException;
 
-use function array_filter;
-use function assert;
-use function count;
-use function iterator_to_array;
-use function json_decode;
-use function json_encode;
-use function rtrim;
-use function sprintf;
-
 class MailpitClient
 {
+    private ResponseNormalizer $normalizer;
+
     public function __construct(
         private ClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
@@ -31,6 +24,7 @@ class MailpitClient
         private string $baseUri
     ) {
         $this->baseUri = rtrim($baseUri, '/');
+        $this->normalizer = new ResponseNormalizer();
     }
 
     /**
@@ -40,31 +34,17 @@ class MailpitClient
     {
         $start = 0;
         while (true) {
-            $request = $this->requestFactory->createRequest(
-                'GET',
-                sprintf(
-                    '%s/api/v1/messages?limit=%d&start=%d',
-                    $this->baseUri,
-                    $limit,
-                    $start
-                )
-            );
+            $allMessageData = $this->fetchMessageList($limit, $start);
+            $messages = $this->extractMessagesFromResponse($allMessageData);
 
-            $response = $this->httpClient->sendRequest($request);
-
-            $allMessageData = json_decode($response->getBody()->getContents(), true);
-
-            foreach ($allMessageData['messages'] as $messageData) {
-                if (!isset($messageData['ID'])) {
-                    continue;
-                }
-
-                yield $this->getMessageById($messageData['ID']);
+            foreach ($messages as $messageId) {
+                yield $this->getMessageById($messageId);
             }
 
             $start += $limit;
+            $total = $this->extractTotalFromResponse($allMessageData);
 
-            if ($start >= $allMessageData['total']) {
+            if ($start >= $total) {
                 return;
             }
         }
@@ -75,26 +55,12 @@ class MailpitClient
      */
     public function findLatestMessages(int $numberOfMessages): array
     {
-        $request = $this->requestFactory->createRequest(
-            'GET',
-            sprintf(
-                '%s/api/v1/messages?limit=%d',
-                $this->baseUri,
-                $numberOfMessages
-            )
-        );
-
-        $response = $this->httpClient->sendRequest($request);
-
-        $allMessageData = json_decode($response->getBody()->getContents(), true);
+        $allMessageData = $this->fetchMessageList($numberOfMessages, 0);
+        $messageIds = $this->extractMessagesFromResponse($allMessageData);
 
         $messages = [];
-        foreach ($allMessageData['messages'] as $messageData) {
-            if (!isset($messageData['ID'])) {
-                continue;
-            }
-
-            $messages[] = $this->getMessageById($messageData['ID']);
+        foreach ($messageIds as $messageId) {
+            $messages[] = $this->getMessageById($messageId);
         }
 
         return $messages;
@@ -126,29 +92,17 @@ class MailpitClient
 
     public function getNumberOfMessages(): int
     {
-        $request = $this->requestFactory->createRequest('GET', sprintf('%s/api/v1/messages?limit=1', $this->baseUri));
-
-        $response = $this->httpClient->sendRequest($request);
-
-        return json_decode($response->getBody()->getContents(), true)['total'] ?? 0;
+        $data = $this->fetchMessageList(1, 0);
+        return $this->extractTotalFromResponse($data);
     }
 
     public function deleteMessage(string $messageId): void
     {
-        $body = json_encode(['IDs' => [$messageId]]);
-
-        if (false === $body) {
-            throw new RuntimeException(
-                sprintf('Unable to JSON encode data to delete message %s', $messageId)
-            );
-        }
+        $body = $this->encodeJson(['IDs' => [$messageId]], sprintf('delete message %s', $messageId));
 
         $request = $this->requestFactory->createRequest('DELETE', sprintf('%s/api/v1/messages', $this->baseUri))
             ->withBody($this->streamFactory->createStream($body))
             ->withHeader('Content-Type', 'application/json');
-
-        /** @var RequestInterface $request */
-        assert($request instanceof RequestInterface);
 
         $this->httpClient->sendRequest($request);
     }
@@ -162,15 +116,10 @@ class MailpitClient
 
     public function releaseMessage(string $messageId, string $emailAddress): void
     {
-        $body = json_encode([
-            'To' => [$emailAddress],
-        ]);
-
-        if (false === $body) {
-            throw new RuntimeException(
-                sprintf('Unable to JSON encode data to release message %s', $messageId)
-            );
-        }
+        $body = $this->encodeJson(
+            ['To' => [$emailAddress]],
+            sprintf('release message %s', $messageId)
+        );
 
         $request = $this->requestFactory->createRequest(
             'POST',
@@ -179,33 +128,13 @@ class MailpitClient
             ->withBody($this->streamFactory->createStream($body))
             ->withHeader('Content-Type', 'application/json');
 
-        /** @var RequestInterface $request */
-        assert($request instanceof RequestInterface);
-
         $this->httpClient->sendRequest($request);
     }
 
     public function getMessageById(string $messageId): Message
     {
-        $request = $this->requestFactory->createRequest(
-            'GET',
-            sprintf(
-                '%s/api/v1/message/%s',
-                $this->baseUri,
-                $messageId
-            )
-        );
-
-        $response = $this->httpClient->sendRequest($request);
-
-        $messageData = json_decode($response->getBody()->getContents(), true);
-
-        if (null === $messageData) {
-            throw NoSuchMessageException::forMessageId($messageId);
-        }
-
-        $messageData['Headers'] = $this->fetchMessageHeaders($messageId);
-        $messageData['AttachmentsData'] = $this->fetchAttachmentsData($messageId, $messageData['Attachments'] ?? []);
+        $messageData = $this->fetchMessageData($messageId);
+        $messageData = $this->enrichMessageData($messageId, $messageData);
 
         return MessageFactory::fromMailpitResponse($messageData);
     }
@@ -225,7 +154,118 @@ class MailpitClient
 
         $headers = json_decode($response->getBody()->getContents(), true);
 
-        return is_array($headers) ? $headers : [];
+        return $this->normalizer->normalizeHeaderMap($headers);
+    }
+
+    private function readStreamContents(StreamInterface $stream): string
+    {
+        if ($stream->isSeekable()) {
+            $stream->rewind();
+        }
+
+        $contents = $stream->getContents();
+        if ($contents === '' && $stream->isSeekable()) {
+            $stream->rewind();
+            $contents = $stream->getContents();
+        }
+
+        return $contents;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchMessageList(int $limit, int $start): array
+    {
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            sprintf(
+                '%s/api/v1/messages?limit=%d&start=%d',
+                $this->baseUri,
+                $limit,
+                $start
+            )
+        );
+
+        $response = $this->httpClient->sendRequest($request);
+
+        return $this->normalizer->decodeJsonResponse(
+            $response->getBody()->getContents(),
+            'list messages'
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $responseData
+     * @return array<int, string>
+     */
+    private function extractMessagesFromResponse(array $responseData): array
+    {
+        $messages = $responseData['messages'] ?? null;
+        if (!is_array($messages)) {
+            throw new RuntimeException('Invalid Mailpit response: messages list missing or not an array.');
+        }
+
+        $messageIds = [];
+        foreach ($messages as $messageData) {
+            $messageId = $this->extractMessageId($messageData);
+            if ($messageId !== null) {
+                $messageIds[] = $messageId;
+            }
+        }
+
+        return $messageIds;
+    }
+
+    /**
+     * @param array<string, mixed> $responseData
+     */
+    private function extractTotalFromResponse(array $responseData): int
+    {
+        $total = $responseData['total'] ?? 0;
+        if (is_int($total)) {
+            return $total;
+        }
+
+        return is_numeric($total) ? (int) $total : 0;
+    }
+
+    /**
+     * @param array<mixed, mixed> $data
+     */
+    private function encodeJson(array $data, string $context): string
+    {
+        $body = json_encode($data);
+
+        if (false === $body) {
+            throw new RuntimeException(sprintf('Unable to JSON encode data to %s', $context));
+        }
+
+        return $body;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchMessageData(string $messageId): array
+    {
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            sprintf('%s/api/v1/message/%s', $this->baseUri, $messageId)
+        );
+
+        $response = $this->httpClient->sendRequest($request);
+
+        if ($response->getStatusCode() === 404) {
+            throw NoSuchMessageException::forMessageId($messageId);
+        }
+
+        $body = $response->getBody()->getContents();
+        if (trim($body) === '') {
+            throw NoSuchMessageException::forMessageId($messageId);
+        }
+
+        return $this->normalizer->decodeJsonResponse($body, 'message details');
     }
 
     /**
@@ -237,19 +277,70 @@ class MailpitClient
         $contents = [];
 
         foreach ($attachments as $attachment) {
-            if (!isset($attachment['PartID'])) {
+            $partId = $this->extractPartId($attachment);
+            if ($partId === null) {
                 continue;
             }
 
-            $request = $this->requestFactory->createRequest(
-                'GET',
-                sprintf('%s/api/v1/message/%s/part/%s', $this->baseUri, $messageId, $attachment['PartID'])
-            );
-
-            $response = $this->httpClient->sendRequest($request);
-            $contents[$attachment['PartID']] = $response->getBody()->getContents();
+            $contents[$partId] = $this->fetchAttachmentContent($messageId, $partId);
         }
 
         return $contents;
+    }
+
+    /**
+     * @param array<string, mixed> $messageData
+     * @return array<string, mixed>
+     */
+    private function enrichMessageData(string $messageId, array $messageData): array
+    {
+        $messageData['Headers'] = $this->fetchMessageHeaders($messageId);
+
+        $attachments = $this->normalizer->normalizeArrayOfStringKeyedArrays($messageData['Attachments'] ?? []);
+        $messageData['Attachments'] = $attachments;
+        $messageData['AttachmentsData'] = $this->fetchAttachmentsData($messageId, $attachments);
+
+        return $messageData;
+    }
+
+    /**
+     * @param array<string, mixed> $attachment
+     */
+    private function extractPartId(array $attachment): ?string
+    {
+        $partId = $attachment['PartID'] ?? null;
+        if (!is_string($partId) && !is_int($partId)) {
+            return null;
+        }
+
+        return (string) $partId;
+    }
+
+    private function fetchAttachmentContent(string $messageId, string $partId): string
+    {
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            sprintf('%s/api/v1/message/%s/part/%s', $this->baseUri, $messageId, $partId)
+        );
+
+        $response = $this->httpClient->sendRequest($request);
+        return $this->readStreamContents($response->getBody());
+    }
+
+    /**
+     * @param mixed $messageData
+     */
+    private function extractMessageId(mixed $messageData): ?string
+    {
+        if (!is_array($messageData)) {
+            return null;
+        }
+
+        $messageId = $messageData['ID'] ?? null;
+        if (!is_string($messageId) || $messageId === '') {
+            return null;
+        }
+
+        return $messageId;
     }
 }

@@ -11,7 +11,7 @@ use function sprintf;
 class Message
 {
     /**
-     * @param Attachment[] $attachments
+     * @param array<int, Attachment> $attachments
      */
     public function __construct(
         public string $messageId,
@@ -25,6 +25,7 @@ class Message
         public Headers $headers
     ) {
         foreach ($attachments as $i => $attachment) {
+            /** @phpstan-ignore instanceof.alwaysTrue */
             if (!$attachment instanceof Attachment) {
                 throw new InvalidArgumentException(
                     sprintf(
