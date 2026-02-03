@@ -2,23 +2,22 @@
 
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Message;
+namespace LibreSign\Mailpit\Tests\unit\Message;
 
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\Message\Headers;
+use LibreSign\Mailpit\Message\Headers;
 
 class HeadersTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_parse_headers(): void
     {
         $messageData = $this->getMessageData();
-        $headers = Headers::fromMailHogResponse($messageData);
+        $headers = Headers::fromMailpitResponse($messageData);
 
         $this->assertEquals(
-            "Mailhog é muito bom mesmo: 😁",
+            "Mailpit é muito bom mesmo: 😁",
             $headers->get("Subject")
         );
 
@@ -43,13 +42,11 @@ class HeadersTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_ignore_case_for_the_header_name(): void
     {
         $messageData = $this->getMessageData();
-        $headers = Headers::fromMailHogResponse($messageData);
+        $headers = Headers::fromMailpitResponse($messageData);
 
         $this->assertEquals(
             "José de tal <no-reply@myself.example>",
@@ -57,9 +54,7 @@ class HeadersTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_return_the_default_value_when_the_header_does_not_exist(): void
     {
         $headers = new Headers([]);
@@ -70,9 +65,7 @@ class HeadersTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_check_if_a_header_exists(): void
     {
         $headers = new Headers([]);
@@ -84,12 +77,12 @@ class HeadersTest extends TestCase
      */
     private function getMessageData(): array
     {
-        $contents = file_get_contents(__DIR__ . '/Fixtures/sample_mailhog_response.json');
+        $contents = file_get_contents(__DIR__ . '/Fixtures/sample_mailpit_response.json');
         if (!$contents) {
             return [];
         }
 
         $allMessagesData = json_decode($contents, true);
-        return $allMessagesData['items'][0];
+        return is_array($allMessagesData) ? $allMessagesData : [];
     }
 }

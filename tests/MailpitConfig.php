@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests;
+namespace LibreSign\Mailpit\Tests;
 
 use RuntimeException;
 
-final class MailhogConfig
+final class MailpitConfig
 {
     /**
      * @var string
@@ -37,21 +37,19 @@ final class MailhogConfig
             return;
         }
 
-        if (!isset($_ENV['mailhog_smtp_dsn'])) {
-            throw new RuntimeException('Environment variable "mailhog_smtp_dsn" must be defined');
-        }
+        $dsn = $_ENV['mailpit_smtp_dsn'] ?? 'smtp://localhost:1025';
 
-        $info = parse_url($_ENV['mailhog_smtp_dsn']);
+        $info = parse_url($dsn);
 
         if (!is_array($info)) {
-            throw new RuntimeException(sprintf('Unable to parse DSN "%s"', $_ENV['mailhog_smtp_dsn']));
+            throw new RuntimeException(sprintf('Unable to parse DSN "%s"', $dsn));
         }
 
         if (!isset($info['host'])) {
             throw new RuntimeException(
                 sprintf(
-                    'Unable to parse host from Mailhog DSN "%s"',
-                    $_ENV['mailhog_smtp_dsn']
+                    'Unable to parse host from Mailpit DSN "%s"',
+                    $dsn
                 )
             );
         }
@@ -59,8 +57,8 @@ final class MailhogConfig
         if (!isset($info['port'])) {
             throw new RuntimeException(
                 sprintf(
-                    'Unable to parse port from Mailhog DSN "%s"',
-                    $_ENV['mailhog_smtp_dsn']
+                    'Unable to parse port from Mailpit DSN "%s"',
+                    $dsn
                 )
             );
         }

@@ -1,0 +1,15 @@
+{
+    "require-dev": {
+        "doctrine/coding-standard": "^9.0"
+    },
+    "minimum-stability": "dev",
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

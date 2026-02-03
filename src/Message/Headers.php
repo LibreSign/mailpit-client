@@ -1,10 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Message;
-
-use function iconv_mime_decode;
-use function strtolower;
+namespace LibreSign\Mailpit\Message;
 
 class Headers
 {
@@ -16,11 +13,19 @@ class Headers
     }
 
     /**
-     * @param array<mixed, mixed> $mailhogResponse
+     * @param array<mixed, mixed> $mailpitResponse
      */
-    public static function fromMailhogResponse(array $mailhogResponse): self
+    public static function fromMailpitResponse(array $mailpitResponse): self
     {
-        return self::fromRawHeaders($mailhogResponse['Content']['Headers'] ?? []);
+        if (isset($mailpitResponse['Headers']) && is_array($mailpitResponse['Headers'])) {
+            return self::fromRawHeaders($mailpitResponse['Headers']);
+        }
+
+        if (self::isHeadersArray($mailpitResponse)) {
+            return self::fromRawHeaders($mailpitResponse);
+        }
+
+        return self::fromRawHeaders([]);
     }
 
     /**
@@ -28,17 +33,23 @@ class Headers
      */
     public static function fromMimePart(array $mimePart): self
     {
-        return self::fromRawHeaders($mimePart['Headers']);
+        $headers = $mimePart['Headers'] ?? [];
+
+        return self::fromRawHeaders(is_array($headers) ? $headers : []);
     }
 
     /**
-     * @param array<string, array<string>> $rawHeaders
+     * @param array<mixed, mixed> $rawHeaders
      */
     private static function fromRawHeaders(array $rawHeaders): self
     {
         $headers = [];
         foreach ($rawHeaders as $name => $header) {
-            if (!isset($header[0])) {
+            if (!is_string($name)) {
+                continue;
+            }
+
+            if (!is_array($header) || !isset($header[0]) || !is_string($header[0])) {
                 continue;
             }
 
@@ -48,6 +59,21 @@ class Headers
         }
 
         return new Headers($headers);
+    }
+
+
+    /**
+     * @param array<mixed, mixed> $data
+     */
+    private static function isHeadersArray(array $data): bool
+    {
+        foreach ($data as $value) {
+            if (!is_array($value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function get(string $name, string $default = ''): string

@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
-  <php>
-    <env name="mailhog_smtp_dsn" value="smtp://localhost:2025"/>
-    <env name="mailhog_api_uri" value="http://localhost:9025"/>
-  </php>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         beStrictAboutOutputDuringTests="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
+         colors="true"
+         cacheDirectory=".phpunit.cache">
   <testsuites>
     <testsuite name="unit">
       <directory>tests/unit</directory>
     </testsuite>
     <testsuite name="integration">
-      <directory>tests/integration/</directory>
+      <directory>tests/integration</directory>
     </testsuite>
   </testsuites>
   <source>

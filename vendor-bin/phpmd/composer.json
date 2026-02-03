@@ -1,0 +1,13 @@
+{
+    "require-dev": {
+        "phpmd/phpmd": "^2.15",
+        "pdepend/pdepend": "^2.5"
+    },
+    "minimum-stability": "dev",
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        }
+    }
+}

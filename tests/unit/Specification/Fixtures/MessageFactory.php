@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Specification\Fixtures;
+namespace LibreSign\Mailpit\Tests\unit\Specification\Fixtures;
 
-use rpkamp\Mailhog\Message\Contact;
-use rpkamp\Mailhog\Message\ContactCollection;
-use rpkamp\Mailhog\Message\Headers;
-use rpkamp\Mailhog\Message\Message;
-use rpkamp\Mailhog\Message\Mime\Attachment;
+use LibreSign\Mailpit\Message\Contact;
+use LibreSign\Mailpit\Message\ContactCollection;
+use LibreSign\Mailpit\Message\Headers;
+use LibreSign\Mailpit\Message\Message;
+use LibreSign\Mailpit\Message\Mime\Attachment;
 
 final class MessageFactory
 {

@@ -1,17 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Message;
+namespace LibreSign\Mailpit\Message;
 
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 use Traversable;
-
-use function array_map;
-use function count;
-use function str_getcsv;
-use function trim;
 
 /**
  * @implements IteratorAggregate<int, Contact>
@@ -31,12 +26,26 @@ class ContactCollection implements Countable, IteratorAggregate
             return new self([]);
         }
 
+        $rawContacts = str_getcsv($contacts, escape: '\\');
+
+        $normalizedContacts = array_filter(
+            array_map(
+                static function ($contact): string {
+                    return is_string($contact) ? trim($contact) : '';
+                },
+                $rawContacts
+            ),
+            static function (string $contact): bool {
+                return $contact !== '';
+            }
+        );
+
         return new self(
             array_map(
                 static function (string $contact) {
                     return Contact::fromString($contact);
                 },
-                array_map('trim', str_getcsv($contacts, escape: '\\'))
+                $normalizedContacts
             )
         );
     }

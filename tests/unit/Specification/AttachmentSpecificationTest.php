@@ -1,26 +1,23 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Specification;
+namespace LibreSign\Mailpit\Tests\unit\Specification;
 
-use rpkamp\Mailhog\Specification\AttachmentSpecification;
+use LibreSign\Mailpit\Specification\AttachmentSpecification;
+use LibreSign\Mailpit\Tests\unit\Specification\Fixtures\MessageFactory;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\Tests\unit\Specification\Fixtures\MessageFactory;
 
 final class AttachmentSpecificationTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_be_satisfied_when_message_has_attachment(): void
     {
         $specification = new AttachmentSpecification('lorem-ipsum.txt');
         $this->assertTrue($specification->isSatisfiedBy(MessageFactory::dummy()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_not_be_satisfied_when_messages_does_not_have_attachment(): void
     {
         $specification = new AttachmentSpecification('lorem-ipsum.jpg');

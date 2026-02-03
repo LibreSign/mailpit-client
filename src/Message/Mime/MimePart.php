@@ -1,15 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Message\Mime;
+namespace LibreSign\Mailpit\Message\Mime;
 
-use rpkamp\Mailhog\Message\Headers;
-
-use function base64_decode;
-use function explode;
-use function preg_match;
-use function quoted_printable_decode;
-use function stripos;
+use LibreSign\Mailpit\Message\Headers;
 
 class MimePart
 {
@@ -25,23 +19,27 @@ class MimePart
     /**
      * @param mixed[] $mimePart
      */
-    public static function fromMailhogResponse(array $mimePart): MimePart
+    public static function fromMailpitResponse(array $mimePart): MimePart
     {
         $headers = Headers::fromMimePart($mimePart);
 
         $filename = null;
-        if (
-            $headers->has('Content-Disposition') &&
+        if ($headers->has('Content-Disposition') &&
             stripos($headers->get('Content-Disposition'), 'attachment') === 0
         ) {
             $matches = [];
             preg_match('~filename=(?P<filename>.*?)(;|$)~i', $headers->get('Content-Disposition'), $matches);
-            $filename = $matches['filename'];
+            $filename = is_string($matches['filename'] ?? null) ? $matches['filename'] : null;
         }
 
         $isAttachment = false;
         if ($headers->has('Content-Disposition')) {
             $isAttachment = stripos($headers->get('Content-Disposition'), 'attachment') === 0;
+        }
+
+        $body = $mimePart['Body'] ?? '';
+        if (!is_string($body)) {
+            $body = '';
         }
 
         return new self(
@@ -53,7 +51,7 @@ class MimePart
                 : null,
             $isAttachment,
             $filename,
-            $mimePart['Body']
+            $body
         );
     }
 

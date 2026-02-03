@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Specification;
+namespace LibreSign\Mailpit\Specification;
 
-use rpkamp\Mailhog\Message\Message;
+use LibreSign\Mailpit\Message\Message;
 
 final class AttachmentSpecification implements Specification
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace rpkamp\Mailhog\Tests;
+namespace LibreSign\Mailpit\Tests;
 
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\MailerInterface;
@@ -43,7 +43,7 @@ trait MessageTrait
     private function getMailer(): MailerInterface
     {
         if (null === $this->mailer) {
-            $this->mailer = new Mailer(Transport::fromDsn($_ENV['mailhog_smtp_dsn']));
+            $this->mailer = new Mailer(Transport::fromDsn($_ENV['mailpit_smtp_dsn'] ?? 'smtp://localhost:1025'));
         }
 
         return $this->mailer;

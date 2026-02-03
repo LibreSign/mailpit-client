@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 LibreSign contributors
+# SPDX-License-Identifier: MIT
+
+name: PHPUnit
+
+on: pull_request
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phpunit-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    name: Tests PHP 8.2
+
+    services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          submodules: true
+
+      - name: Set up php8.2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
+        with:
+          php-version: 8.2
+          extensions: json, iconv
+          coverage: xdebug
+          ini-file: development
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Run unit tests
+        env:
+          mailpit_smtp_dsn: smtp://mailpit:1025
+          mailpit_api_url: http://mailpit:8025
+        run: composer run test:unit
+
+      - name: Run integration tests
+        env:
+          mailpit_smtp_dsn: smtp://mailpit:1025
+          mailpit_api_url: http://mailpit:8025
+        run: composer run test:integration

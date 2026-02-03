@@ -16,43 +16,57 @@
     ],
     "autoload": {
         "psr-4": {
-            "rpkamp\\Mailhog\\": "src/"
+            "LibreSign\\Mailpit\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "rpkamp\\Mailhog\\Tests\\": "tests/"
+            "LibreSign\\Mailpit\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "stable",
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-json": "*",
         "ext-iconv": "*",
-        "php-http/client-implementation": "^1.0",
         "php-http/httplug": "^1.0 || ^2.0",
         "psr/http-message": "^1.0 || ^2.0",
         "psr/http-factory": "^1.0"
     },
     "require-dev": {
-        "phpmd/phpmd": "^2.9.1",
-        "phpunit/phpunit": "^10.0",
-        "php-http/curl-client": "^2.0",
-        "phpstan/phpstan": "^0.12.64",
-        "pdepend/pdepend": "^2.5",
-        "nyholm/psr7": "^1.2",
-        "doctrine/coding-standard": "^9.0",
-        "php-parallel-lint/php-parallel-lint": "^1.2",
-        "egulias/email-validator": "^2.1.23",
-        "symfony/mailer": "^5.0"
+        "bamarni/composer-bin-plugin": "^1.8"
     },
     "config": {
+        "optimize-autoloader": true,
+        "classmap-authoritative": true,
+        "sort-packages": true,
         "allow-plugins": {
             "php-http/discovery": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "bamarni/composer-bin-plugin": true
+        }
+    },
+    "extra": {
+        "bamarni-bin": {
+            "bin-links": true,
+            "forward-command": true
         }
     },
     "scripts": {
-        "lint": "find . -name \\*.php -not -path './vendor/*' -not -path './build/*' -print0 | xargs -0 -n1 php -l"
+        "lint": "find . -name \\*.php -not -path './vendor/*' -not -path './vendor-bin/*' -print0 | xargs -0 -n1 php -l",
+        "cs:check": "vendor-bin/phpcs/vendor/squizlabs/php_codesniffer/bin/phpcs --standard=PSR2 src/",
+        "cs:fix": "vendor-bin/phpcs/vendor/squizlabs/php_codesniffer/bin/phpcbf --standard=PSR2 src/",
+        "phpmd": "vendor-bin/phpmd/vendor/phpmd/phpmd/src/bin/phpmd src text phpmd.xml",
+        "phpstan": "vendor-bin/phpstan/vendor/phpstan/phpstan/phpstan analyze src/",
+        "test:unit": "vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist --testsuite unit --colors=always",
+        "test:integration": "vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist --testsuite integration --colors=always",
+        "test:coverage": "XDEBUG_MODE=coverage vendor-bin/phpunit/vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist",
+        "post-install-cmd": [
+          "@composer bin all install --ansi",
+          "composer dump-autoload -o"
+        ],
+        "post-update-cmd": [
+          "composer dump-autoload"
+        ]
     }
 }

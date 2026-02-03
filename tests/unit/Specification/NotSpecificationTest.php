@@ -1,19 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Specification;
+namespace LibreSign\Mailpit\Tests\unit\Specification;
 
+use LibreSign\Mailpit\Specification\NotSpecification;
+use LibreSign\Mailpit\Tests\unit\Specification\Fixtures\AlwaysSatisfied;
+use LibreSign\Mailpit\Tests\unit\Specification\Fixtures\MessageFactory;
+use LibreSign\Mailpit\Tests\unit\Specification\Fixtures\NeverSatisfied;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\Specification\NotSpecification;
-use rpkamp\Mailhog\Tests\unit\Specification\Fixtures\AlwaysSatisfied;
-use rpkamp\Mailhog\Tests\unit\Specification\Fixtures\MessageFactory;
-use rpkamp\Mailhog\Tests\unit\Specification\Fixtures\NeverSatisfied;
 
 class NotSpecificationTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_negate_answer_of_wrapped_specification(): void
     {
         $dummyMessage = MessageFactory::dummy();

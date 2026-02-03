@@ -1,19 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Message;
+namespace LibreSign\Mailpit\Tests\unit\Message;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\Message\Contact;
-use rpkamp\Mailhog\Message\ContactCollection;
+use LibreSign\Mailpit\Message\Contact;
+use LibreSign\Mailpit\Message\ContactCollection;
 
 class ContactCollectionTest extends TestCase
 {
-    /**
-     * @test
-     * @param Contact[] $expectedContacts
-     * @dataProvider contactsProvider
-     */
+    #[Test]
+    #[DataProvider('contactsProvider')]
     public function it_should_parse_contacts_from_string(string $contacts, array $expectedContacts): void
     {
         $collection = ContactCollection::fromString($contacts);
@@ -26,7 +25,7 @@ class ContactCollectionTest extends TestCase
     /**
      * @return array<string, array{string, Contact[]}>
      */
-    public function contactsProvider(): array
+    public static function contactsProvider(): array
     {
         return [
             'single e-mail address' => [
@@ -65,10 +64,8 @@ class ContactCollectionTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     * @dataProvider equalContactsProvider
-     */
+    #[Test]
+    #[DataProvider('equalContactsProvider')]
     public function it_should_indicate_it_contains_a_contact_it_was_instantiated_with(Contact $instantiate, Contact $verify): void
     {
         $collection = new ContactCollection([$instantiate]);
@@ -79,7 +76,7 @@ class ContactCollectionTest extends TestCase
     /**
      * @return array<string, array{Contact, Contact}>
      */
-    public function equalContactsProvider(): array
+    public static function equalContactsProvider(): array
     {
         return [
             'e-mail address only' => [new Contact('me@myself.example'), new Contact('me@myself.example')],
@@ -87,10 +84,8 @@ class ContactCollectionTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     * @dataProvider nonEqualContactsProvider
-     */
+    #[Test]
+    #[DataProvider('nonEqualContactsProvider')]
     public function it_should_indicate_it_does_not_contain_contacts_it_was_not_instantiated_with(Contact $instantiate, Contact $verify): void
     {
         $collection = new ContactCollection([$instantiate]);
@@ -101,7 +96,7 @@ class ContactCollectionTest extends TestCase
     /**
      * @return array<string, array{Contact, Contact}>
      */
-    public function nonEqualContactsProvider(): array
+    public static function nonEqualContactsProvider(): array
     {
         return [
             'different e-mail address' => [
@@ -116,9 +111,7 @@ class ContactCollectionTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_indicate_correct_number_of_contacts_contained(): void
     {
         $collection = new ContactCollection([new Contact('me@myself.example'), new Contact('myself@myself.example')]);
@@ -126,9 +119,7 @@ class ContactCollectionTest extends TestCase
         $this->assertEquals(2, count($collection));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_return_iterator_with_contacts_it_was_instantiated_with(): void
     {
         $contacts = [new Contact('me@myself.example'), new Contact('myself@myself.example')];

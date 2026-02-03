@@ -1,23 +1,22 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Message;
+namespace LibreSign\Mailpit\Tests\unit\Message;
 
 use InvalidArgumentException;
-use rpkamp\Mailhog\Message\Contact;
-use rpkamp\Mailhog\Message\ContactCollection;
-use rpkamp\Mailhog\Message\Headers;
-use rpkamp\Mailhog\Message\Message;
+use LibreSign\Mailpit\Message\Contact;
+use LibreSign\Mailpit\Message\ContactCollection;
+use LibreSign\Mailpit\Message\Headers;
+use LibreSign\Mailpit\Message\Message;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\Message\Mime\Attachment;
+use LibreSign\Mailpit\Message\Mime\Attachment;
 use RuntimeException;
 use stdClass;
 
 final class MessageTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_return_values_it_was_instantiated_with(): void
     {
         $attachments = [
@@ -48,9 +47,7 @@ final class MessageTest extends TestCase
         $this->assertEquals($headers, $message->headers);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_throw_exception_when_non_attachment_supplied_as_attachment(): void
     {
         $this->expectException(InvalidArgumentException::class);

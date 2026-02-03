@@ -1,5 +1,7 @@
 /vendor
+/vendor-bin/**/vendor/
 /composer.lock
-/.phpunit.result.cache
+/.phpunit.cache
 /.phpcs-cache
 /phpcs.xml
+tests/.env

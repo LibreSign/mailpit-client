@@ -1,52 +1,52 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\integration;
+namespace LibreSign\Mailpit\Tests\integration;
 
 use Generator;
 use Http\Client\Curl\Client;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use rpkamp\Mailhog\MailhogClient;
-use rpkamp\Mailhog\Message\Mime\Attachment;
-use rpkamp\Mailhog\Message\Contact;
-use rpkamp\Mailhog\Message\Message;
-use rpkamp\Mailhog\NoSuchMessageException;
-use rpkamp\Mailhog\Specification\AndSpecification;
-use rpkamp\Mailhog\Specification\BodySpecification;
-use rpkamp\Mailhog\Specification\OrSpecification;
-use rpkamp\Mailhog\Specification\SenderSpecification;
-use rpkamp\Mailhog\Specification\Specification;
-use rpkamp\Mailhog\Specification\SubjectSpecification;
-use rpkamp\Mailhog\Tests\MailhogConfig;
-use rpkamp\Mailhog\Tests\MessageTrait;
+use LibreSign\Mailpit\MailpitClient;
+use LibreSign\Mailpit\Message\Mime\Attachment;
+use LibreSign\Mailpit\Message\Contact;
+use LibreSign\Mailpit\Message\Message;
+use LibreSign\Mailpit\NoSuchMessageException;
+use LibreSign\Mailpit\Specification\AndSpecification;
+use LibreSign\Mailpit\Specification\BodySpecification;
+use LibreSign\Mailpit\Specification\OrSpecification;
+use LibreSign\Mailpit\Specification\SenderSpecification;
+use LibreSign\Mailpit\Specification\Specification;
+use LibreSign\Mailpit\Specification\SubjectSpecification;
+use LibreSign\Mailpit\Tests\MailpitConfig;
+use LibreSign\Mailpit\Tests\MessageTrait;
 use RuntimeException;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
-class MailhogClientTest extends TestCase
+class MailpitClientTest extends TestCase
 {
     use MessageTrait;
 
     /**
-     * @var MailhogClient
+     * @var MailpitClient
      */
     private $client;
 
     public function setUp(): void
     {
-        $this->client = new MailhogClient(
+        $this->client = new MailpitClient(
             new Client(),
             new Psr17Factory(),
             new Psr17Factory(),
-            $_ENV['mailhog_api_uri']
+            $_ENV['mailpit_api_url'] ?? 'http://localhost:8025'
         );
         $this->client->purgeMessages();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_return_correct_number_of_messages_in_inbox(): void
     {
         $this->sendDummyMessage();
@@ -54,9 +54,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals(1, $this->client->getNumberOfMessages());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_delete_the_message(): void
     {
         $this->sendDummyMessage();
@@ -68,9 +66,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals(0, $this->client->getNumberOfMessages());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_purge_the_inbox(): void
     {
         $this->sendDummyMessage();
@@ -80,9 +76,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals(0, $this->client->getNumberOfMessages());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_receive_all_message_data(): void
     {
         $this->sendMessage(
@@ -99,9 +93,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Test body', $message->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_handle_message_without_subject_correctly(): void
     {
         $this->sendMessage(
@@ -114,9 +106,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('', $message->subject);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_find_latest_messages(): void
     {
         for ($i = 1; $i <= 10; $i++) {
@@ -126,9 +116,7 @@ class MailhogClientTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_find_last_message(): void
     {
         for ($i = 1; $i <= 3; $i++) {
@@ -146,20 +134,16 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Test body', $message->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_throw_exception_when_there_is_no_last_message(): void
     {
         $this->expectException(NoSuchMessageException::class);
         $this->client->getLastMessage();
     }
 
-    /**
-     * @test
-     * @dataProvider limitProvider
-     */
-    public function it_should_query_mailhog_until_all_messages_have_been_received(): void
+    #[Test]
+    #[DataProvider('limitProvider')]
+    public function it_should_query_mailpit_until_all_messages_have_been_received(): void
     {
         for ($i = 0; $i < 5; $i++) {
             $this->sendMessage(
@@ -190,7 +174,7 @@ class MailhogClientTest extends TestCase
     /**
      * @return array<string, int[]>
      */
-    public function limitProvider(): array
+    public static function limitProvider(): array
     {
         return [
             'one by one' => [1],
@@ -200,10 +184,8 @@ class MailhogClientTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     * @dataProvider specificationProvider
-     */
+    #[Test]
+    #[DataProvider('specificationProvider')]
     public function it_should_find_messages_that_satisfy_specification(Specification $specification): void
     {
         $this->sendMessage(
@@ -234,7 +216,7 @@ class MailhogClientTest extends TestCase
     /**
      * @return array<string, array{Specification}>
      */
-    public function specificationProvider(): array
+    public static function specificationProvider(): array
     {
         return [
             'sender specification' => [new SenderSpecification(new Contact('me@myself.example'))],
@@ -253,11 +235,8 @@ class MailhogClientTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     * @param Contact[] $expectedRecipients
-     * @dataProvider messageProvider
-     */
+    #[Test]
+    #[DataProvider('messageProvider')]
     public function it_should_receive_single_message_by_id(Email $messageToSend, array $expectedRecipients): void
     {
         $this->sendMessage($messageToSend);
@@ -280,9 +259,13 @@ class MailhogClientTest extends TestCase
     /**
      * @return array<string, array{Email, Contact[]}>
      */
-    public function messageProvider(): array
+    public static function messageProvider(): array
     {
-        $message = $this->createBasicMessage('me@myself.example', 'myself@myself.example', 'Test subject', 'Test body');
+        $message = (new Email())
+            ->from('me@myself.example')
+            ->to('myself@myself.example')
+            ->subject('Test subject')
+            ->text('Test body');
 
         return [
             'single recipient' => [
@@ -296,9 +279,7 @@ class MailhogClientTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_message_with_cc_and_bcc_recipients(): void
     {
         $messageToSend = (new Email())
@@ -326,9 +307,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Test body', $messages[0]->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_message_with_bcc_recipients_only(): void
     {
         $messageToSend = (new Email())
@@ -352,9 +331,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Test body', $messages[0]->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_names(): void
     {
         $messageToSend = (new Email())
@@ -374,9 +351,7 @@ class MailhogClientTest extends TestCase
         $this->assertTrue($message->ccRecipients->contains(new Contact('cc@myself.example', 'CC Example')));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_message_with_attachment(): void
     {
         $message = $this->createBasicMessage('me@myself.example', 'myself@myself.example', 'Test subject', 'Test body');
@@ -399,9 +374,7 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Test body', $message->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_message_with_attachment_before_body(): void
     {
         $message = (new Email())
@@ -428,10 +401,8 @@ class MailhogClientTest extends TestCase
         $this->assertEquals('Hello world', $message->body);
     }
 
-    /**
-     * @test
-     * @dataProvider htmlMessageProvider
-     */
+    #[Test]
+    #[DataProvider('htmlMessageProvider')]
     public function it_should_prefer_html_part_over_plaintext_part(Email $messageToSend): void
     {
         $this->sendMessage($messageToSend);
@@ -446,7 +417,7 @@ class MailhogClientTest extends TestCase
     /**
      * @return array<string, Email[]>
      */
-    public function htmlMessageProvider(): array
+    public static function htmlMessageProvider(): array
     {
         $message = (new Email())
             ->from('me@myself.example')
@@ -467,9 +438,7 @@ class MailhogClientTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_hydrate_attachments(): void
     {
         $message = (new Email())
@@ -511,39 +480,31 @@ class MailhogClientTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_throw_exception_when_no_message_found_by_id(): void
     {
         $this->expectException(NoSuchMessageException::class);
         $this->client->getMessageById('123');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_release_a_message(): void
     {
         $this->sendDummyMessage();
 
         $message = iterator_to_array($this->client->findAllMessages())[0];
 
-        $info = parse_url($_ENV['mailhog_smtp_dsn']);
+        $beforeCount = $this->client->getNumberOfMessages();
 
         $this->client->releaseMessage(
             $message->messageId,
-            MailhogConfig::getHost(),
-            MailhogConfig::getPort(),
             'me@myself.example'
         );
 
-        $this->assertEquals(2, $this->client->getNumberOfMessages());
+        $this->assertEquals($beforeCount, $this->client->getNumberOfMessages());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_decode_quoted_printable_html_messages(): void
     {
         $body = <<<BODY
@@ -567,9 +528,7 @@ BODY;
         $this->assertEquals(str_replace(PHP_EOL, "\r\n", $body), $message->body);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_decode_quoted_printable_html_messages_non_mime_part(): void
     {
         $body = <<<BODY
@@ -584,7 +543,7 @@ BODY;
             ->from('me@myself.example')
             ->to('me@myself.example')
             ->html($body)
-            ->subject('Mailhog extension for Behat');
+            ->subject('Mailpit extension for Behat');
 
         $this->sendMessage($message);
 
@@ -596,9 +555,7 @@ BODY;
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function it_should_decode_quoted_printable_text_messages(): void
     {
         $message = (new Email())

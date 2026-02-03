@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Message\Mime;
+namespace LibreSign\Mailpit\Message\Mime;
 
 class Attachment
 {

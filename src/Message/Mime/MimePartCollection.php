@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Message\Mime;
-
-use function array_merge;
-use function count;
-use function stripos;
+namespace LibreSign\Mailpit\Message\Mime;
 
 class MimePartCollection
 {
@@ -19,7 +15,7 @@ class MimePartCollection
     /**
      * @param mixed[] $mimeParts
      */
-    public static function fromMailhogResponse(array $mimeParts): self
+    public static function fromMailpitResponse(array $mimeParts): self
     {
         return new self(self::flattenParts($mimeParts));
     }
@@ -27,18 +23,23 @@ class MimePartCollection
     /**
      * @param mixed[] $mimeParts
      *
-     * @return mixed[]
+     * @return array<int, MimePart>
      */
     protected static function flattenParts(array $mimeParts): array
     {
         $flattenedParts = [];
         foreach ($mimeParts as $mimePart) {
-            if (!isset($mimePart['MIME']['Parts'])) {
-                $flattenedParts[] = MimePart::fromMailhogResponse($mimePart);
+            if (!is_array($mimePart)) {
                 continue;
             }
 
-            $flattenedParts = array_merge($flattenedParts, self::flattenParts($mimePart['MIME']['Parts']));
+            $mimeData = $mimePart['MIME'] ?? null;
+            if (!is_array($mimeData) || !isset($mimeData['Parts']) || !is_array($mimeData['Parts'])) {
+                $flattenedParts[] = MimePart::fromMailpitResponse($mimePart);
+                continue;
+            }
+
+            $flattenedParts = array_merge($flattenedParts, self::flattenParts($mimeData['Parts']));
         }
 
         return $flattenedParts;

@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace rpkamp\Mailhog\Tests\unit\Specification\Fixtures;
+namespace LibreSign\Mailpit\Tests\unit\Specification\Fixtures;
 
-use rpkamp\Mailhog\Message\Message;
-use rpkamp\Mailhog\Specification\Specification;
+use LibreSign\Mailpit\Message\Message;
+use LibreSign\Mailpit\Specification\Specification;
 
 final class NeverSatisfied implements Specification
 {
