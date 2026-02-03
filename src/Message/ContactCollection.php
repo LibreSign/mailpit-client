@@ -6,6 +6,7 @@ namespace LibreSign\Mailpit\Message;
 use ArrayIterator;
 use Countable;
 use IteratorAggregate;
+use Override;
 use Traversable;
 
 /**
@@ -62,13 +63,15 @@ class ContactCollection implements Countable, IteratorAggregate
     }
 
     /**
-     * @return Traversable<Contact>
+     * @return Traversable<int, Contact>
      */
+    #[Override]
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->contacts);
     }
 
+    #[Override]
     public function count(): int
     {
         return count($this->contacts);

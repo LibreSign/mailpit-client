@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 LibreSign Contributors
+# SPDX-License-Identifier: MIT
+
+version: 2
+updates:
+  # Maintain dependencies for Composer
+  - package-ecosystem: "composer"
+    directories:
+      - "/"
+      - "/vendor-bin/phpcs"
+      - "/vendor-bin/phpmd"
+      - "/vendor-bin/phpstan"
+      - "/vendor-bin/phpunit"
+    schedule:
+      interval: "daily"
+
+  # Maintain dependencies for github-actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: daily

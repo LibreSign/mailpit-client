@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 final class SubjectSpecification implements Specification
 {
@@ -11,6 +12,7 @@ final class SubjectSpecification implements Specification
     {
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         return $message->subject === $this->subject;

@@ -5,6 +5,7 @@ namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Contact;
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 final class SenderSpecification implements Specification
 {
@@ -12,6 +13,7 @@ final class SenderSpecification implements Specification
     {
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         return $message->sender->equals($this->sender);

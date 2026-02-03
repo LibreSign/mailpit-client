@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 final class AttachmentSpecification implements Specification
 {
@@ -11,6 +12,7 @@ final class AttachmentSpecification implements Specification
     {
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         foreach ($message->attachments as $attachment) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 final class NotSpecification implements Specification
 {
@@ -11,6 +12,7 @@ final class NotSpecification implements Specification
     {
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         return !$this->wrapped->isSatisfiedBy($message);

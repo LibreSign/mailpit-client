@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 use function array_slice;
 use function count;
@@ -27,6 +28,7 @@ final class AndSpecification implements Specification
         return new self($specification, self::all($other[0], ...array_slice($other, 1)));
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         return $this->left->isSatisfiedBy($message) && $this->right->isSatisfiedBy($message);

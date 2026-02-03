@@ -5,6 +5,7 @@ namespace LibreSign\Mailpit\Specification;
 
 use LibreSign\Mailpit\Message\Contact;
 use LibreSign\Mailpit\Message\Message;
+use Override;
 
 final class RecipientSpecification implements Specification
 {
@@ -12,6 +13,7 @@ final class RecipientSpecification implements Specification
     {
     }
 
+    #[Override]
     public function isSatisfiedBy(Message $message): bool
     {
         return $message->recipients->contains($this->recipient);
